@@ -156,7 +156,7 @@ static void regConn(struct revPing rp) {
 
 }
 
-// returns whether connection to destination has been establisched
+// returns whether connection to destination has been established
 static bool connEstablished(uint8_t destID) {
     return false;
 }
