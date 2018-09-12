@@ -91,6 +91,19 @@ static struct ping createPing(uint8_t destID) {
 // takes raw broadcast input, interprets as ping and ingores/registers/forwards
 static void processPing(struct ping p) {
     if (!isDuplicate(p)) {
+        //add ping to pingList
+        static uint8_t i;
+        for(i = 1; i<pingListSize; i++){
+            pingList[pingListSize-i] = pingList[pingListSize-i-1];
+        }
+        pingList[0] = p;
+        if(p.destID == node_id){
+            createRevPing(p);
+        }else{
+            p.prevNodeID = node_id;
+            p.hopCnt++;
+            pingOut(p);
+        }
 
     }
 }
