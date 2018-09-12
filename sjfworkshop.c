@@ -94,7 +94,7 @@ static void processPing(struct ping p) {
     if (!isDuplicate(p)) {
         //add ping to pingList
         static uint8_t i;
-        for(i = 1; i<pingListSize; i++){
+        for(i = 1; i<pingListSize; i++) {
             pingList[pingListSize-i] = pingList[pingListSize-i-1];
         }
         pingList[0] = p;
@@ -153,7 +153,14 @@ static struct revPing createRevPing(struct ping p) {
 
 // takes raw broadcast input, interprets as revPing and registers conn/forwards
 static void processRevPing(struct revPing rp) {
+    if (rp.prevNodeID == node_id) {
 
+        regConn(rp);
+        rp.nextNodeID = node_id;
+        rp.prevNodeID = connList[0].prevNodeID;
+        revPingOut(rp);
+
+    }
 }
 
 // process revPing for forwarding and sends it
@@ -171,34 +178,61 @@ static void revPingOut(struct revPing rp) {
 // registers connection with revPing given
 static void regConn(struct revPing rp) {
     static uint8_t i;
-
-    static struct connection c;
-    c.connID = rp.connID;
-    c.srcID = rp.srcID;
-    c.destID = rp.destID;
-    c.nextNodeID = rp.nextNodeID;
     bool isInPingList = false;
 
-    for(i = 0; i<pingListSize; i++){
-        if(rp.connID == pingList[i].connID && rp.srcID == pingList[i].srcID){
-            c.prevNodeID = pingList[i].prevNodeID;
+    for(i = 0; i<pingListSize; i++) {
+        if(rp.connID == pingList[i].connID && rp.srcID == pingList[i].srcID) {
             isInPingList = true;
             break;
         }
     }
-    if(isInPingList){
-        for(i = 1; i<connectionListSize; i++){
-            connList[connectionListSize-i] = connList[connectionListSize-i-1];
+
+    if (isInPingList) {
+        static struct connection c;
+        c.connID = rp.connID;
+        c.srcID = rp.srcID;
+        c.destID = rp.destID;
+        c.nextNodeID = rp.nextNodeID;
+        c.prevNodeID = pingList[i].prevNodeID;
+
+        for(i = 1; i<connListSize; i++) {
+            connList[connListSize-i] = connList[connListSize-i-1];
         }
+
         connList[0] = c;
-    }else{
+    } else {
         printf("ERR: unexpected revPing in regConn");
     }
 }
 
 // returns whether connection to destination has been established
 static bool connEstablished(uint8_t destID) {
-    return false;
+    return (getConnIDbyDest(destID)!=0);
+}
+
+static uint8_t getConnIDbyDest(uint8_t destID) {
+    static uint8_t i;
+
+    for(i = 0; i<connListSize; i++) {
+        if (connList[i].destID == destID) {
+            return connList[i].connID;
+        }
+    }
+    return 0;
+}
+
+static struct connection getConnByID(uint8_t connID) {
+    static uint8_t i;
+
+    for(i = 0; i<connListSize; i++) {
+        if (connList[i].connID == connID) {
+            return connList[i];
+        }
+    }
+    printf("ERR: connection not found in getConnByID");
+
+    static struct connection c;
+    return c;
 }
 
 
@@ -206,14 +240,41 @@ static bool connEstablished(uint8_t destID) {
 // ***********************************************
 
 // returns message-struct with values given
-static struct msg createMsg(uint8_t destID, char* text) {
+static struct msg createMsg(uint8_t connID, char* text) {
     static struct msg message;
+    static struct connection c;
+    c = getConnByID(connID);
+
+    if (c.connID == 0) {
+        printf("ERR: no connection established in createMsg()");
+    }
+
+    message.type = 10;
+    message.connID = c.connID;
+    message.srcID = c.srcID;
+    message.destID = c.destID;
+    message.nextNodeID = c.nextNodeID;
+    message.hopCnt = 1;
+    sprintf(message.text, text);
+
+    if (c.connID != connID || node_id != c.srcID) {
+        printf("ERR: c.connID != connID || node_id != c.srcID in createMsg()");
+    }
+
     return message;
 }
 
 // takes raw broadcast input and interprets it as message
 static void processMsg(struct msg m){
-    printf("%s\n",m.text);
+    if (m.destID == node_id) {
+        printf("***MESSAGE***\n* %s\n*************\n",m.text);
+    } else if (connEstablished(m.destID) && m.nextNodeID == node_id){
+        static struct connection c;
+        c = getConnByID(m.connID);
+        m.hopCnt++;
+        m.nextNodeID = c.nextNodeID;
+        msgOut(m);
+    }
 }
 
 // sends message
