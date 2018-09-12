@@ -132,7 +132,8 @@ static void processRevPing(struct revPing rp) {
 
 // process revPing for forwarding and sends it
 static void revPingOut(struct revPing rp) {
-
+    packetbuf_copyfrom(&rp,sizeof(rp));
+    broadcast_send(&broadcast);
 }
 
 
