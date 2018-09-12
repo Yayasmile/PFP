@@ -41,9 +41,10 @@ static const struct connection {
 // * global variables
 // ***********************************************
 static struct broadcast_conn broadcast;
-static const struct broadcast_callbacks broadcast_call = { broadcast_recv };
 static struct ping pingList[10];
 static struct connection connList[5];
+
+
 
 // * functions
 // ***********************************************
@@ -71,5 +72,5 @@ static bool connEstablished(uint8_t destID);
 
 // message
 static struct msg createMsg(uint8_t destID, char* text);
-static void processMsg(static struct msg m);
+static void processMsg(struct msg m);
 static void msgOut(struct msg m);
