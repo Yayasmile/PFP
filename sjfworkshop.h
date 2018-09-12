@@ -5,6 +5,7 @@
 #include "dev/button-sensor.h"
 #include "dev/leds.h"
 #include "dev/serial-line.h"
+#include "config.h"
 #include <stdio.h>
 #include <stdbool.h>
 
@@ -41,8 +42,8 @@ static const struct connection {
 // * global variables
 // ***********************************************
 static struct broadcast_conn broadcast;
-static struct ping pingList[10];
-static struct connection connList[5];
+static struct ping pingList[pingListSize];
+static struct connection connList[connectionListSize];
 
 
 
