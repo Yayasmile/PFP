@@ -34,7 +34,8 @@ static void establishConn(uint8_t destID) {
 }
 
 static void sendMsg(uint8_t destID,struct msg m) {
-
+    packetbuf_copyfrom(&m,sizeof(m));
+    broadcast_send(&broadcast);
 }
 
 
@@ -166,7 +167,30 @@ static void revPingOut(struct revPing rp) {
 
 // registers connection with revPing given
 static void regConn(struct revPing rp) {
+    static uint8_t i;
 
+    static struct connection c;
+    c.connID = rp.connID;
+    c.srcID = rp.srcID;
+    c.destID = rp.destID;
+    c.nextNodeID = rp.nextNodeID;
+    bool isInPingList = false;
+
+    for(i = 0; i<pingListSize; i++){
+        if(rp.connID == pingList[i].connID && rp.srcID == pingList[i].srcID){
+            c.prevNodeID = pingList[i].prevNodeID;
+            isInPingList = true;
+            break;
+        }
+    }
+    if(isInPingList){
+        for(i = 1; i<connectionListSize; i++){
+            connList[connectionListSize-i] = connList[connectionListSize-i-1];
+        }
+        connList[0] = c;
+    }else{
+        printf("ERR: unexpected revPing in regConn");
+    }
 }
 
 // returns whether connection to destination has been established
