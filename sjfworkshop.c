@@ -67,7 +67,13 @@ static void broadcast_recv(struct broadcast_conn *c, const linkaddr_t * from) {
 
 // returns ping-struct with values
 static struct ping createPing(uint8_t destID) {
-
+    static struct ping p;
+    p.type = 1;
+    p.srcID = node_id;
+    p.destID = destID;
+    p.prevNodeID = node_id;
+    p.cost = 1;
+    return p;
 }
 
 // takes raw broadcast input, interprets as ping and ingores/registers/forwards
