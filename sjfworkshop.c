@@ -6,7 +6,7 @@ AUTOSTART_PROCESSES(&main_proc);
 /*---------------------------------------------------------------------------*/
 
 static const struct broadcast_callbacks broadcast_call = { broadcast_recv };
-connIDCounter = 0;
+static uint8_t connIDCounter = 0;
 
 
 // * MAIN FUNCTION
@@ -52,7 +52,7 @@ static void broadcast_recv(struct broadcast_conn *c, const linkaddr_t * from) {
     static struct revPing rp;
     static struct msg m;
 
-    switch (typeHeader) {
+    switch (h.type) {
         case 1: // ping
             packetbuf_copyto(&p);
             processPing(p);

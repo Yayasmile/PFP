@@ -11,6 +11,7 @@
 
 static const struct msg {
     uint8_t type;
+    uint8_t connID;
     uint8_t srcID;
     uint8_t destID;
     uint8_t prevNodeID;
@@ -20,6 +21,7 @@ static const struct msg {
 
 static const struct ping {
     uint8_t type;
+    uint8_t connID;
     uint8_t srcID;
     uint8_t destID;
     uint8_t prevNodeID;
@@ -29,17 +31,29 @@ static const struct ping {
 
 static const struct revPing {
     uint8_t type;
+    uint8_t connID;
     uint8_t srcID;
     uint8_t destID;
-    uint8_t nextNodeID;
+    uint8_t prevNodeID;
     uint8_t hopCnt;
+    uint8_t nextNodeID;
 } ;
 
 static const struct connection {
+    uint8_t connID;
     uint8_t srcID;
     uint8_t destID;
     uint8_t prevNodeID;
     uint8_t nextNodeID;
+} ;
+
+static const struct header {
+    uint8_t type;
+    uint8_t connID;
+    uint8_t srcID;
+    uint8_t destID;
+    uint8_t prevNodeID;
+    uint8_t hopCnt;
 } ;
 
 // * global variables
