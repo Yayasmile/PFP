@@ -102,8 +102,14 @@ static void pingOut(struct ping p) {
 
 // returns revPing-struct with values
 static struct revPing createRevPing(struct ping p) {
-
     static struct revPing rp;
+    if (p.destID != node_id) {
+        printf("ERR: destID != node_id in createRevPing()");
+    }
+    rp.type = 2;
+    rp.srcID = p.srcID;
+    rp.destID = p.destID;
+    rp.nextNodeID = p.destID;
     return rp;
 }
 
