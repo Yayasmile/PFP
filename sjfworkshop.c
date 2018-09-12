@@ -6,6 +6,7 @@ AUTOSTART_PROCESSES(&main_proc);
 /*---------------------------------------------------------------------------*/
 static const struct broadcast_callbacks broadcast_call = { broadcast_recv };
 
+
 // * MAIN FUNCTION
 // *******************************************
 
@@ -18,18 +19,19 @@ PROCESS_THREAD(main_proc, ev, data)
     broadcast_open(&broadcast, 129, &broadcast_call);
 
     while(1) {
+
+
         // add program logic
-        PROCESS_YIELD();
-        packetbuf_copyto(&dm_rcv);
-        PROCESS_END();
+    }
+    PROCESS_END();
 }
 
 
 static void establishConn(uint8_t destID) {
-
+    return;
 }
 
-static void sendMsg(uint8_t destID,static struct msg m) {
+static void sendMsg(uint8_t destID,struct msg m) {
 
 }
 
@@ -40,21 +42,22 @@ static void sendMsg(uint8_t destID,static struct msg m) {
 // called when data is received
 static void broadcast_recv(struct broadcast_conn *c, const linkaddr_t * from) {
     static uint8_t typeHeader;
+    static struct ping p;
+    static struct revPing rp;
+    static struct msg m;
+
     packetbuf_copyto(&typeHeader);
 
     switch (typeHeader) {
         case 1: // ping
-            static struct ping p;
             packetbuf_copyto(&p);
             processPing(p);
             break;
         case 2: // revPing
-            static struct revPing rp;
             packetbuf_copyto(&rp);
             processRevPing(rp);
             break;
         case 10: // message
-            static struct msg m;
             packetbuf_copyto(&m);
             processMsg(m);
             break;
@@ -79,13 +82,13 @@ static struct ping createPing(uint8_t destID) {
 }
 
 // takes raw broadcast input, interprets as ping and ingores/registers/forwards
-static void processPing(static struct ping p) {
+static void processPing(struct ping p) {
 
 }
 
 // returns whether given ping has already been received
 static bool isDuplicate(struct ping p) {
-
+return false;
 }
 
 // process ping for forwarding and sends it
@@ -98,17 +101,19 @@ static void pingOut(struct ping p) {
 // ***********************************************
 
 // returns revPing-struct with values
-static struct revPing createRevPing(static struct ping p) {
+static struct revPing createRevPing(struct ping p) {
 
+    static struct revPing rp;
+    return rp;
 }
 
 // takes raw broadcast input, interprets as revPing and registers conn/forwards
-static void processRevPing(static struct revPing rp) {
+static void processRevPing(struct revPing rp) {
 
 }
 
 // process revPing for forwarding and sends it
-static void revPingOut(static struct revPing rp) {
+static void revPingOut(struct revPing rp) {
 
 }
 
@@ -117,13 +122,13 @@ static void revPingOut(static struct revPing rp) {
 // ***********************************************
 
 // registers connection with revPing given
-static void regConn(static struct revPing rp) {
+static void regConn(struct revPing rp) {
 
 }
 
 // returns whether connection to destination has been establisched
 static bool connEstablished(uint8_t destID) {
-
+    return false;
 }
 
 
@@ -132,15 +137,16 @@ static bool connEstablished(uint8_t destID) {
 
 // returns message-struct with values given
 static struct msg createMsg(uint8_t destID, char* text) {
-
+    static struct msg message;
+    return message;
 }
 
 // takes raw broadcast input and interprets it as message
-static void processMsg(static struct msg m){
+static void processMsg(struct msg m){
 
 }
 
 // sends message
-static void msgOut(static struct msg m) {
+static void msgOut(struct msg m) {
 
 }

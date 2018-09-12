@@ -74,3 +74,4 @@ static bool connEstablished(uint8_t destID);
 static struct msg createMsg(uint8_t destID, char* text);
 static void processMsg(struct msg m);
 static void msgOut(struct msg m);
+//test
