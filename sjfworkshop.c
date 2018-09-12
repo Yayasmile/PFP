@@ -88,7 +88,14 @@ static void processPing(struct ping p) {
 
 // returns whether given ping has already been received
 static bool isDuplicate(struct ping p) {
-return false;
+    bool ret = false;
+    static uint8_t i;
+    for(i = 0; i<pingListSize;i++) {
+        if(p.srcID == pingList[i].srcID && p.destID == pingList[i].destID){
+            ret = true;
+        }
+    }
+    return ret;
 }
 
 // process ping for forwarding and sends it
