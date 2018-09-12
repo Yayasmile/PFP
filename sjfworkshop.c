@@ -98,7 +98,9 @@ static void processPing(struct ping p) {
         }
         pingList[0] = p;
         if(p.destID == node_id){
-            createRevPing(p);
+            struct revPing rp = createRevPing(p);
+            regConn(rp);
+            revPingOut(rp);
         }else{
             p.prevNodeID = node_id;
             p.hopCnt++;
@@ -142,6 +144,7 @@ static struct revPing createRevPing(struct ping p) {
     rp.srcID = p.srcID;
     rp.destID = p.destID;
     rp.nextNodeID = p.destID;
+    rp.prevNodeID = p.prevNodeID; 
     rp.hopCnt = 1;
     rp.connID = p.connID;
     return rp;
