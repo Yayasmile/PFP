@@ -100,7 +100,8 @@ static bool isDuplicate(struct ping p) {
 
 // process ping for forwarding and sends it
 static void pingOut(struct ping p) {
-
+    packetbuf_copyfrom(&p,sizeof(p));
+    broadcast_send(&broadcast);
 }
 
 
@@ -161,5 +162,6 @@ static void processMsg(struct msg m){
 
 // sends message
 static void msgOut(struct msg m) {
-
+    packetbuf_copyfrom(&m,sizeof(m));
+    broadcast_send(&broadcast);
 }
