@@ -6,7 +6,7 @@ AUTOSTART_PROCESSES(&main_proc);
 /*---------------------------------------------------------------------------*/
 
 static const struct broadcast_callbacks broadcast_call = { broadcast_recv };
-connIDCounter = 0;
+static uint8_t connIDCounter = 0;
 
 
 // * MAIN FUNCTION
@@ -52,7 +52,7 @@ static void broadcast_recv(struct broadcast_conn *c, const linkaddr_t * from) {
     static struct revPing rp;
     static struct msg m;
 
-    switch (typeHeader) {
+    switch (h.type) {
         case 1: // ping
             packetbuf_copyto(&p);
             processPing(p);
@@ -91,6 +91,19 @@ static struct ping createPing(uint8_t destID) {
 // takes raw broadcast input, interprets as ping and ingores/registers/forwards
 static void processPing(struct ping p) {
     if (!isDuplicate(p)) {
+        //add ping to pingList
+        static uint8_t i;
+        for(i = 1; i<pingListSize; i++){
+            pingList[pingListSize-i] = pingList[pingListSize-i-1];
+        }
+        pingList[0] = p;
+        if(p.destID == node_id){
+            createRevPing(p);
+        }else{
+            p.prevNodeID = node_id;
+            p.hopCnt++;
+            pingOut(p);
+        }
 
     }
 }
@@ -156,7 +169,7 @@ static void regConn(struct revPing rp) {
 
 }
 
-// returns whether connection to destination has been establisched
+// returns whether connection to destination has been established
 static bool connEstablished(uint8_t destID) {
     return false;
 }
