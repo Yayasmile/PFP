@@ -78,12 +78,15 @@ static struct ping createPing(uint8_t destID) {
     p.destID = destID;
     p.prevNodeID = node_id;
     p.cost = 1;
+    p.hopCnt = 1;
     return p;
 }
 
 // takes raw broadcast input, interprets as ping and ingores/registers/forwards
 static void processPing(struct ping p) {
+    if (!isDuplicate(p)) {
 
+    }
 }
 
 // returns whether given ping has already been received
@@ -118,6 +121,7 @@ static struct revPing createRevPing(struct ping p) {
     rp.srcID = p.srcID;
     rp.destID = p.destID;
     rp.nextNodeID = p.destID;
+    rp.hopCnt = 1;
     return rp;
 }
 
