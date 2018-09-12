@@ -56,13 +56,13 @@ static void broadcast_recv(struct broadcast_conn *c, const linkaddr_t * from);
 
 // ping
 static struct ping createPing(uint8_t destID);
-static void processPing(char* data);
+static void processPing(struct ping p);
 static bool isDuplicate(struct ping p);
 static void pingOut(struct ping p);
 
 // revPing
 static struct revPing createRevPing(struct ping p);
-static void processRevPing(char* data);
+static void processRevPing(struct revPing rp);
 static void revPingOut(struct revPing rp);
 
 // connection
@@ -71,5 +71,5 @@ static bool connEstablished(uint8_t destID);
 
 // message
 static struct msg createMsg(uint8_t destID, char* text);
-static void processMsg(char* data);
+static void processMsg(static struct msg m);
 static void msgOut(struct msg m);

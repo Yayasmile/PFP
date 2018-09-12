@@ -18,11 +18,7 @@ PROCESS_THREAD(main_proc, ev, data)
 
     while(1) {
         // add program logic
-        PROCESS_YIELD();
-        if(ev==serial_line_event_message) {
-
-        }
-    }
+        PROCESS_YIELD();packetbuf_copyto(&dm_rcv);
     PROCESS_END();
 }
 
@@ -41,7 +37,28 @@ static void sendMsg(uint8_t destID, struct msg m) {
 
 // called when data is received
 static void broadcast_recv(struct broadcast_conn *c, const linkaddr_t * from) {
+    static uint8_t typeHeader;
+    packetbuf_copyto(&typeHeader);
 
+    switch (typeHeader) {
+        case 1: // ping
+            static struct ping p;
+            packetbuf_copyto(&p);
+            processPing(p);
+            break;
+        case 2: // revPing
+            static struct revPing rp;
+            packetbuf_copyto(&rp);
+            processRevPing(rp);
+            break;
+        case 10: // message
+            static struct msg m;
+            packetbuf_copyto(&m);
+            processMsg(m);
+            break;
+        default:
+            printf("ERR: INVALID typeHeader", );
+    }
 }
 
 
@@ -54,7 +71,7 @@ static struct ping createPing(uint8_t destID) {
 }
 
 // takes raw broadcast input, interprets as ping and ingores/registers/forwards
-static void processPing(char* data) {
+static void processPing(struct ping p) {
 
 }
 
@@ -78,7 +95,7 @@ static struct revPing createRevPing(struct ping p) {
 }
 
 // takes raw broadcast input, interprets as revPing and registers conn/forwards
-static void processRevPing(char* data) {
+static void processRevPing(struct revPing rp) {
 
 }
 
@@ -111,7 +128,7 @@ static struct msg createMsg(uint8_t destID, char* text) {
 }
 
 // takes raw broadcast input and interprets it as message
-static void processMsg(char* data) {
+static void processMsg(static struct msg m){
 
 }
 
