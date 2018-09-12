@@ -157,7 +157,7 @@ static struct msg createMsg(uint8_t destID, char* text) {
 
 // takes raw broadcast input and interprets it as message
 static void processMsg(struct msg m){
-
+    printf("%s\n",m.text);
 }
 
 // sends message

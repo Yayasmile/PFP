@@ -14,7 +14,7 @@ static const struct msg {
     uint8_t srcID;
     uint8_t destID;
     uint8_t prevNodeID;
-    char msg[50];
+    char text[50];
 } ;
 
 static const struct ping {
