@@ -4,7 +4,9 @@
 PROCESS(main_proc, "MAIN PROCESS");
 AUTOSTART_PROCESSES(&main_proc);
 /*---------------------------------------------------------------------------*/
+
 static const struct broadcast_callbacks broadcast_call = { broadcast_recv };
+connIDCounter = 0;
 
 
 // * MAIN FUNCTION
@@ -41,12 +43,14 @@ static void sendMsg(uint8_t destID,struct msg m) {
 
 // called when data is received
 static void broadcast_recv(struct broadcast_conn *c, const linkaddr_t * from) {
-    static uint8_t typeHeader;
+    static struct header h;
+    packetbuf_copyto(&h);
+
+    printf("[RXB %d %d %d %d %d]", node_id, h.destID, h.srcID, h.connID, h.hopCnt);
+
     static struct ping p;
     static struct revPing rp;
     static struct msg m;
-
-    packetbuf_copyto(&typeHeader);
 
     switch (typeHeader) {
         case 1: // ping
@@ -79,6 +83,8 @@ static struct ping createPing(uint8_t destID) {
     p.prevNodeID = node_id;
     p.cost = 1;
     p.hopCnt = 1;
+    connIDCounter ++;
+    p.connID = connIDCounter;
     return p;
 }
 
@@ -105,6 +111,8 @@ static bool isDuplicate(struct ping p) {
 static void pingOut(struct ping p) {
     packetbuf_copyfrom(&p,sizeof(p));
     broadcast_send(&broadcast);
+
+    printf("[RTX %d %d %d %d %d]", node_id, p.destID, p.srcID, p.connID, p.hopCnt);
 }
 
 
@@ -122,6 +130,7 @@ static struct revPing createRevPing(struct ping p) {
     rp.destID = p.destID;
     rp.nextNodeID = p.destID;
     rp.hopCnt = 1;
+    rp.connID = p.connID;
     return rp;
 }
 
@@ -134,6 +143,8 @@ static void processRevPing(struct revPing rp) {
 static void revPingOut(struct revPing rp) {
     packetbuf_copyfrom(&rp,sizeof(rp));
     broadcast_send(&broadcast);
+
+    printf("[RTX %d %d %d %d %d]", node_id, rp.destID, rp.srcID, rp.connID, rp.hopCnt);
 }
 
 
@@ -169,4 +180,6 @@ static void processMsg(struct msg m){
 static void msgOut(struct msg m) {
     packetbuf_copyfrom(&m,sizeof(m));
     broadcast_send(&broadcast);
+
+    printf("[TXB %d %d %d %d %d]", node_id, m.destID, m.srcID, m.connID, m.hopCnt);
 }
