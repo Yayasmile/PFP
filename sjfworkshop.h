@@ -14,6 +14,7 @@ static const struct msg {
     uint8_t srcID;
     uint8_t destID;
     uint8_t prevNodeID;
+    uint8_t hopCnt;
     char msg[50];
 } ;
 
@@ -23,6 +24,7 @@ static const struct ping {
     uint8_t destID;
     uint8_t prevNodeID;
     uint8_t cost;
+    uint8_t hopCnt;
 } ;
 
 static const struct revPing {
@@ -30,6 +32,7 @@ static const struct revPing {
     uint8_t srcID;
     uint8_t destID;
     uint8_t nextNodeID;
+    uint8_t hopCnt;
 } ;
 
 static const struct connection {
