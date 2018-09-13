@@ -1,2 +1,2 @@
 #define pingListSize 10
-#define connectionListSize 5
+#define connListSize 5

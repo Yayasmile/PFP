@@ -14,7 +14,7 @@ static const struct msg {
     uint8_t connID;
     uint8_t srcID;
     uint8_t destID;
-    uint8_t prevNodeID;
+    uint8_t nextNodeID;
     uint8_t hopCnt;
     char text[50];
 } ;
@@ -60,7 +60,7 @@ static const struct header {
 // ***********************************************
 static struct broadcast_conn broadcast;
 static struct ping pingList[pingListSize];
-static struct connection connList[connectionListSize];
+static struct connection connList[connListSize];
 
 
 
@@ -77,6 +77,7 @@ static void broadcast_recv(struct broadcast_conn *c, const linkaddr_t * from);
 static struct ping createPing(uint8_t destID);
 static void processPing(struct ping p);
 static bool isDuplicate(struct ping p);
+static void regPing(struct ping p);
 static void pingOut(struct ping p);
 
 // revPing
@@ -87,8 +88,12 @@ static void revPingOut(struct revPing rp);
 // connection
 static void regConn(struct revPing rp);
 static bool connEstablished(uint8_t destID);
+static uint8_t getConnIDbyDest(uint8_t destID);
+static struct connection getConnByID(uint8_t connID);
 
 // message
 static struct msg createMsg(uint8_t destID, char* text);
 static void processMsg(struct msg m);
 static void msgOut(struct msg m);
+
+static void waitRand();
