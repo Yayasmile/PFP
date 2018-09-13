@@ -7,6 +7,7 @@
 #include "dev/serial-line.h"
 #include "config.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdbool.h>
 
 static const struct msg {
@@ -17,7 +18,7 @@ static const struct msg {
     uint8_t nextNodeID;
     uint8_t hopCnt;
     char text[50];
-} ;
+} msg;
 
 static const struct ping {
     uint8_t type;
@@ -27,7 +28,7 @@ static const struct ping {
     uint8_t prevNodeID;
     uint8_t hopCnt;
     uint8_t cost;
-} ;
+} ping;
 
 static const struct revPing {
     uint8_t type;
@@ -37,7 +38,7 @@ static const struct revPing {
     uint8_t prevNodeID;
     uint8_t hopCnt;
     uint8_t nextNodeID;
-} ;
+} revPing;
 
 static const struct connection {
     uint8_t connID;
@@ -45,7 +46,7 @@ static const struct connection {
     uint8_t destID;
     uint8_t prevNodeID;
     uint8_t nextNodeID;
-} ;
+} connection;
 
 static const struct header {
     uint8_t type;
@@ -54,7 +55,7 @@ static const struct header {
     uint8_t destID;
     uint8_t prevNodeID;
     uint8_t hopCnt;
-} ;
+} header;
 
 // * global variables
 // ***********************************************
@@ -68,7 +69,7 @@ static struct connection connList[connListSize];
 // ***********************************************
 
 static void establishConn(uint8_t destID);
-static void sendMsg(uint8_t destID, struct msg m);
+static void sendMsg(uint8_t connID,char* text);
 
 // broadcast
 static void broadcast_recv(struct broadcast_conn *c, const linkaddr_t * from);

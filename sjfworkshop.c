@@ -25,31 +25,27 @@ PROCESS_THREAD(main_proc, ev, data)
 
         if (strcmp((char*)data, "ping")==0) {
             printf("pinging 3\n");
-            static struct ping p;
-            p = createPing(3);
-            regPing(p);
-            pingOut(p);
+            establishConn(destination);
         }
         if (strcmp((char*)data, "msg")==0) {
             printf("messaging 3\n");
-            static struct msg m;
-            m = createMsg(1, "Hello Node 3!");
-            msgOut(m);
+            sendMsg(connIDCounter, "Hello Node " + destination);
         }
     }
     PROCESS_END();
 }
 
-
 static void establishConn(uint8_t destID) {
     static struct ping p;
     p = createPing(destID);
-    processPing(p);
+    regPing(p);
+    pingOut(p);
 }
 
-static void sendMsg(uint8_t destID,struct msg m) {
-    packetbuf_copyfrom(&m,sizeof(m));
-    broadcast_send(&broadcast);
+static void sendMsg(uint8_t connID,char* text) {
+    static struct msg m;
+    m = createMsg(connID, text);
+    msgOut(m);
 }
 
 
