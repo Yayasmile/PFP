@@ -7,6 +7,7 @@ AUTOSTART_PROCESSES(&main_proc);
 
 static const struct broadcast_callbacks broadcast_call = { broadcast_recv };
 static uint8_t connIDCounter = 0;
+static struct etimer et; // timer
 
 
 // * MAIN FUNCTION
@@ -16,21 +17,47 @@ PROCESS_THREAD(main_proc, ev, data)
 {
     PROCESS_EXITHANDLER()
     PROCESS_BEGIN();
+    leds_init();
+    serial_line_init();
+    static uint8_t destID = 0;
+    static char* msgText;
 
     // initialize
     broadcast_open(&broadcast, 129, &broadcast_call);
 
     while(1) {
-        PROCESS_YIELD();
+        PROCESS_YIELD(); // get destID
+        if(ev==serial_line_event_message) {
+            destID = atoi((char *) data);
+        }
+        PROCESS_YIELD(); // get message
+        if(ev==serial_line_event_message) {
+            msgText = (char *) data;
+        }
 
-        if (strcmp((char*)data, "ping")==0) {
-            printf("pinging 3\n");
-            establishConn(destination);
+        if (!connEstablished(destID)) { // ping 5 times
+            static uint8_t i;
+            static uint8_t pt;
+            pt = pingTries;
+            for(i = 0; i < pt; i++) {
+                establishConn(destID);
+                etimer_set(&et, CLOCK_SECOND * pingWaitTime);
+                PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&et));
+                if (connEstablished(destID)) {
+                    printf("Established connection to node %d after %d try/tries\n", destID, i+1);
+                    sendMsg(getConnIDbyDest(destID), msgText);
+                    break;
+                }
+            }
+
+            if (!connEstablished(destID)) {
+                printf("Couldn't establish connection to node %d after %d tries\n", destID, pt);
+            }
+
+        } else { // send message
+            sendMsg(getConnIDbyDest(destID), msgText);
         }
-        if (strcmp((char*)data, "msg")==0) {
-            printf("messaging 3\n");
-            sendMsg(connIDCounter, "Hello Node " + destination);
-        }
+
     }
     PROCESS_END();
 }
