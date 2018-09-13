@@ -17,6 +17,7 @@ static const struct msg {
     uint8_t destID;
     uint8_t nextNodeID;
     uint8_t hopCnt;
+    uint8_t msgID;
     char text[50];
 } msg;
 
@@ -27,6 +28,7 @@ static const struct ping {
     uint8_t destID;
     uint8_t prevNodeID;
     uint8_t hopCnt;
+    uint8_t msgID;
     uint8_t cost;
 } ping;
 
@@ -37,6 +39,7 @@ static const struct revPing {
     uint8_t destID;
     uint8_t prevNodeID;
     uint8_t hopCnt;
+    uint8_t msgID;
     uint8_t nextNodeID;
 } revPing;
 
@@ -55,6 +58,7 @@ static const struct header {
     uint8_t destID;
     uint8_t prevNodeID;
     uint8_t hopCnt;
+    uint8_t msgID;
 } header;
 
 // * global variables

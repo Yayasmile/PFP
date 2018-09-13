@@ -7,6 +7,7 @@ AUTOSTART_PROCESSES(&main_proc);
 
 static const struct broadcast_callbacks broadcast_call = { broadcast_recv };
 static uint8_t connIDCounter = 0;
+static uint8_t msgIDCounter = 0;
 static struct etimer et; // timer
 
 
@@ -21,6 +22,7 @@ PROCESS_THREAD(main_proc, ev, data)
     serial_line_init();
     static uint8_t destID = 0;
     static char* msgText;
+    static bool doRepeat = false;
 
     // initialize
     broadcast_open(&broadcast, 129, &broadcast_call);
@@ -35,28 +37,41 @@ PROCESS_THREAD(main_proc, ev, data)
             msgText = (char *) data;
         }
 
-        if (!connEstablished(destID)) { // ping 5 times
-            static uint8_t i;
-            static uint8_t pt;
-            pt = pingTries;
-            for(i = 0; i < pt; i++) {
-                establishConn(destID);
-                etimer_set(&et, CLOCK_SECOND * pingWaitTime);
-                PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&et));
-                if (connEstablished(destID)) {
-                    printf("Established connection to node %d after %d try/tries\n", destID, i+1);
-                    sendMsg(getConnIDbyDest(destID), msgText);
-                    break;
-                }
-            }
-
-            if (!connEstablished(destID)) {
-                printf("Couldn't establish connection to node %d after %d tries\n", destID, pt);
-            }
-
-        } else { // send message
-            sendMsg(getConnIDbyDest(destID), msgText);
+        if(strcmp(msgText, "send") == 0) {
+            msgText = "repeated message";
+            doRepeat = true;
+        } else {
+            doRepeat = false;
         }
+
+        do {
+            if (!connEstablished(destID)) { // ping 5 times
+                static uint8_t i;
+                static uint8_t pt;
+                pt = pingTries;
+                for(i = 0; i < pt; i++) {
+                    establishConn(destID);
+                    etimer_set(&et, CLOCK_SECOND * pingWaitTime);
+                    PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&et));
+                    if (connEstablished(destID)) {
+                        printf("Established connection to node %d after %d try/tries\n", destID, i+1);
+                        sendMsg(getConnIDbyDest(destID), msgText);
+                        break;
+                    }
+                }
+
+                if (!connEstablished(destID)) {
+                    printf("Couldn't establish connection to node %d after %d tries\n", destID, pt);
+                }
+
+            } else { // send message
+                sendMsg(getConnIDbyDest(destID), msgText);
+            }
+            if(doRepeat) {
+                etimer_set(&et, CLOCK_SECOND * 1.0); // set the timer to 1s
+                PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&et));
+            }
+        } while (doRepeat);
 
     }
     PROCESS_END();
@@ -84,7 +99,7 @@ static void broadcast_recv(struct broadcast_conn *c, const linkaddr_t * from) {
     static struct header h;
     packetbuf_copyto(&h);
 
-    printf("[RXB %d %d %d %d %d]\n", node_id, h.destID, h.srcID, h.connID, h.hopCnt);
+    printf("[RXB %d %d %d %d %d]\n", node_id, h.destID, h.srcID, h.msgID, h.hopCnt);
 
     static struct ping p;
     static struct revPing rp;
@@ -92,17 +107,17 @@ static void broadcast_recv(struct broadcast_conn *c, const linkaddr_t * from) {
 
     switch (h.type) {
         case 1: // ping
-            printf("RXB ping\n");
+            // printf("RXB ping\n");
             packetbuf_copyto(&p);
             processPing(p);
             break;
         case 2: // revPing
-            printf("RXB revPing\n");
+            // printf("RXB revPing\n");
             packetbuf_copyto(&rp);
             processRevPing(rp);
             break;
         case 10: // message
-            printf("RXB msg\n");
+            // printf("RXB msg\n");
             packetbuf_copyto(&m);
             processMsg(m);
             break;
@@ -122,6 +137,7 @@ static struct ping createPing(uint8_t destID) {
     p.srcID = node_id;
     p.destID = destID;
     p.prevNodeID = node_id;
+    p.msgID = 0;
     p.cost = 1;
     p.hopCnt = 1;
     connIDCounter ++;
@@ -134,12 +150,12 @@ static void processPing(struct ping p) {
     if (!isDuplicate(p)) {
         regPing(p);
         if(p.destID == node_id){
-            printf("ping reached dest, createRevPing\n");
+            // printf("ping reached dest, createRevPing\n");
             struct revPing rp = createRevPing(p);
             regConn(rp);
             revPingOut(rp);
         }else{
-            printf("ping forwarded\n");
+            // printf("ping forwarded\n");
             p.prevNodeID = node_id;
             p.hopCnt++;
             waitRand();
@@ -147,12 +163,12 @@ static void processPing(struct ping p) {
         }
 
     } else {
-        printf("ping ignored\n");
+        // printf("ping ignored\n");
     }
 }
 
 static void regPing(struct ping p) {
-    printf("ping registered\n");
+    // printf("ping registered\n");
     static uint8_t i;
     for(i = 1; i<pingListSize; i++) {
         pingList[pingListSize-i] = pingList[pingListSize-i-1];
@@ -177,7 +193,7 @@ static void pingOut(struct ping p) {
     packetbuf_copyfrom(&p,sizeof(p));
     broadcast_send(&broadcast);
 
-    printf("[RXT %d %d %d %d %d] ping\n", node_id, p.destID, p.srcID, p.connID, p.hopCnt);
+    printf("[TXB %d %d %d %d %d] ping\n", node_id, p.destID, p.srcID, p.msgID, p.hopCnt);
 }
 
 
@@ -194,7 +210,8 @@ static struct revPing createRevPing(struct ping p) {
     rp.srcID = p.srcID;
     rp.destID = p.destID;
     rp.nextNodeID = p.destID;
-    rp.prevNodeID = p.prevNodeID; 
+    rp.prevNodeID = p.prevNodeID;
+    rp.msgID = 0;
     rp.hopCnt = 1;
     rp.connID = p.connID;
     return rp;
@@ -203,17 +220,17 @@ static struct revPing createRevPing(struct ping p) {
 // takes raw broadcast input, interprets as revPing and registers conn/forwards
 static void processRevPing(struct revPing rp) {
     if (rp.srcID == node_id) {
-        printf("revPing reached srcID, conn %d established\n", rp.connID);
+        // printf("revPing reached srcID, conn %d established\n", rp.connID);
         regConn(rp);
     } else if (rp.prevNodeID == node_id) {
-        printf("processing/forwarding revPing\n");
+        // printf("processing/forwarding revPing\n");
         regConn(rp);
         rp.nextNodeID = node_id;
         rp.prevNodeID = connList[0].prevNodeID;
         rp.hopCnt ++;
         revPingOut(rp);
     } else {
-        printf("revPing ignored\n");
+        // printf("revPing ignored\n");
     }
 }
 
@@ -222,7 +239,7 @@ static void revPingOut(struct revPing rp) {
     packetbuf_copyfrom(&rp,sizeof(rp));
     broadcast_send(&broadcast);
 
-    printf("[RXT %d %d %d %d %d] revPing\n", node_id, rp.destID, rp.srcID, rp.connID, rp.hopCnt);
+    printf("[TXB %d %d %d %d %d] revPing\n", node_id, rp.destID, rp.srcID, rp.msgID, rp.hopCnt);
 }
 
 
@@ -231,7 +248,7 @@ static void revPingOut(struct revPing rp) {
 
 // registers connection with revPing given
 static void regConn(struct revPing rp) {
-    printf("conn %d registered\n", rp.connID);
+    // printf("conn %d registered\n", rp.connID);
     leds_toggle(LEDS_RED);
     static uint8_t i;
     bool isInPingList = false;
@@ -310,6 +327,8 @@ static struct msg createMsg(uint8_t connID, char* text) {
     message.srcID = c.srcID;
     message.destID = c.destID;
     message.nextNodeID = c.nextNodeID;
+    msgIDCounter ++;
+    message.msgID = msgIDCounter;
     message.hopCnt = 1;
     sprintf(message.text, text);
 
@@ -325,14 +344,14 @@ static void processMsg(struct msg m){
     if (m.destID == node_id) {
         printf("***MESSAGE***\n* %s\n*************\n",m.text);
     } else if (connEstablished(m.destID) && m.nextNodeID == node_id){
-        printf("forward msg\n");
+        // printf("forward msg\n");
         static struct connection c;
         c = getConnByID(m.connID);
         m.hopCnt++;
         m.nextNodeID = c.nextNodeID;
         msgOut(m);
     } else {
-        printf("ignored msg\n");
+        // printf("ignored msg\n");
     }
 }
 
@@ -341,7 +360,7 @@ static void msgOut(struct msg m) {
     packetbuf_copyfrom(&m,sizeof(m));
     broadcast_send(&broadcast);
 
-    printf("[TXB %d %d %d %d %d] msg\n", node_id, m.destID, m.srcID, m.connID, m.hopCnt);
+    printf("[TXB %d %d %d %d %d] msg\n", node_id, m.destID, m.srcID, m.msgID , m.hopCnt);
 }
 
 static void waitRand(){
