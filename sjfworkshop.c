@@ -38,7 +38,7 @@ PROCESS_THREAD(main_proc, ev, data)
         }
 
         if(strcmp(msgText, "send") == 0) {
-            msgText = "repeated message";
+            msgText = "tled";
             doRepeat = true;
         } else {
             doRepeat = false;
@@ -99,7 +99,7 @@ static void broadcast_recv(struct broadcast_conn *c, const linkaddr_t * from) {
     static struct header h;
     packetbuf_copyto(&h);
 
-    printf("[RXB %d %d %d %d %d]\n", node_id, h.destID, h.srcID, h.msgID, h.hopCnt);
+    // printf("[RXB %d %d %d %d %d]\n", node_id, h.destID, h.srcID, h.msgID, h.hopCnt);
 
     static struct ping p;
     static struct revPing rp;
@@ -153,6 +153,7 @@ static void processPing(struct ping p) {
             // printf("ping reached dest, createRevPing\n");
             struct revPing rp = createRevPing(p);
             regConn(rp);
+            waitRand();
             revPingOut(rp);
         }else{
             // printf("ping forwarded\n");
@@ -193,7 +194,7 @@ static void pingOut(struct ping p) {
     packetbuf_copyfrom(&p,sizeof(p));
     broadcast_send(&broadcast);
 
-    printf("[TXB %d %d %d %d %d] ping\n", node_id, p.destID, p.srcID, p.msgID, p.hopCnt);
+    // printf("[TXB %d %d %d %d %d] ping\n", node_id, p.destID, p.srcID, p.msgID, p.hopCnt);
 }
 
 
@@ -239,7 +240,7 @@ static void revPingOut(struct revPing rp) {
     packetbuf_copyfrom(&rp,sizeof(rp));
     broadcast_send(&broadcast);
 
-    printf("[TXB %d %d %d %d %d] revPing\n", node_id, rp.destID, rp.srcID, rp.msgID, rp.hopCnt);
+    // printf("[TXB %d %d %d %d %d] revPing\n", node_id, rp.destID, rp.srcID, rp.msgID, rp.hopCnt);
 }
 
 
@@ -276,6 +277,7 @@ static void regConn(struct revPing rp) {
     } else {
         printf("ERR: unexpected revPing in regConn\n");
     }
+    leds_toggle(LEDS_RED);
 }
 
 // returns whether connection to destination has been established
@@ -343,13 +345,18 @@ static struct msg createMsg(uint8_t connID, char* text) {
 static void processMsg(struct msg m){
     if (m.destID == node_id) {
         printf("***MESSAGE***\n* %s\n*************\n",m.text);
+        if(strcmp(m.text, "tled")==0) {
+            leds_toggle(LEDS_BLUE);
+        }
     } else if (connEstablished(m.destID) && m.nextNodeID == node_id){
+        leds_toggle(LEDS_RED);
         // printf("forward msg\n");
         static struct connection c;
         c = getConnByID(m.connID);
         m.hopCnt++;
         m.nextNodeID = c.nextNodeID;
         msgOut(m);
+        leds_toggle(LEDS_RED);
     } else {
         // printf("ignored msg\n");
     }
@@ -360,7 +367,7 @@ static void msgOut(struct msg m) {
     packetbuf_copyfrom(&m,sizeof(m));
     broadcast_send(&broadcast);
 
-    printf("[TXB %d %d %d %d %d] msg\n", node_id, m.destID, m.srcID, m.msgID , m.hopCnt);
+    //printf("[TXB %d %d %d %d %d] msg\n", node_id, m.destID, m.srcID, m.msgID , m.hopCnt);
 }
 
 static void waitRand(){
